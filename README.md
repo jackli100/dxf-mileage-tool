@@ -36,6 +36,13 @@ Execute `python rail_power_draw.py` after configuring the paths and the script
 will save a new DXF with annotations added.
 
 
+### `extract_closed_polyline_text.py`
+
+
+Execute `python extract_closed_polyline_text.py` and a CSV named
+`room_and_number_extracted.csv` will be produced if matching features are
+found.
+
 ## Installation
 1. Install Python 3.8 or higher.
 2. Install dependencies:
@@ -58,4 +65,5 @@ command line:
 ```bash
 python rail_power.py
 python rail_power_draw.py
+python extract_closed_polyline_text.py
 
