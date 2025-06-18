@@ -35,18 +35,6 @@ start of the file include:
 Execute `python rail_power_draw.py` after configuring the paths and the script
 will save a new DXF with annotations added.
 
-### `mileage_connect.py`
-Reads mileage values from a plain text file and, for each value, draws a
-polyline from that mileage position on the railway to the fixed coordinate
-`(553263.2769, 3430423.5097, 0)`. Important configuration options include:
-
-- `RAIL_LAYERS` – mapping of railway layers to mileage offsets.
-- `DXF_FILE` – path of the DXF file to modify.
-- `MILEAGE_FILE` – text file containing mileage numbers.
-- `CONNECT_LAYER` – layer name for the new polylines.
-
-Run `python mileage_connect.py` after editing the variables to produce a new DXF
-named `<input>_connected.dxf`.
 
 ## Installation
 1. Install Python 3.8 or higher.
@@ -70,5 +58,4 @@ command line:
 ```bash
 python rail_power.py
 python rail_power_draw.py
-python mileage_connect.py
-```
+
