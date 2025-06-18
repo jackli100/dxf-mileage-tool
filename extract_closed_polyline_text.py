@@ -75,10 +75,7 @@ def main():
         found_text = None
         mileage = None
         for txt in texts:
-            # ``txt.dxf.insert`` is a ``Vec3`` instance which does not
-            # support slicing like ``[:2]``. Access ``x`` and ``y``
-            # components explicitly to create the Shapely point.
-            pt = Point(txt.dxf.insert.x, txt.dxf.insert.y)
+            pt = Point(txt.dxf.insert[:2])
             if shape.contains(pt):
                 found_text = txt.dxf.text
                 mileage = parse_mileage(found_text)
