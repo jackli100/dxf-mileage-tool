@@ -36,6 +36,17 @@ Execute `python rail_power_draw.py` after configuring the paths and the script
 will save a new DXF with annotations added.
 
 
+### `extract_closed_polyline_text.py`
+Extracts closed polylines and any single line `TEXT` objects located inside
+them from a DXF file (default `room_and_number.dxf`). The script parses the
+mileage value from the contained text and writes a CSV sorted by mileage. Key
+settings at the top of the file allow you to change the input and output file
+names.
+
+Execute `python extract_closed_polyline_text.py` and a CSV named
+`room_and_number_extracted.csv` will be produced if matching features are
+found.
+
 ## Installation
 1. Install Python 3.8 or higher.
 2. Install dependencies:
@@ -58,4 +69,5 @@ command line:
 ```bash
 python rail_power.py
 python rail_power_draw.py
+python extract_closed_polyline_text.py
 
