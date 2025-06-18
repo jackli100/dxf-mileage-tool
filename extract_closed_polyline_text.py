@@ -128,6 +128,79 @@ def mileage_from_point(pt: Vec2, rails):
     return best
 
 
+def poly2d(entity):
+    """Project a LWPOLYLINE/POLYLINE to a list of ``Vec2`` points."""
+    if entity.dxftype() not in ("LWPOLYLINE", "POLYLINE"):
+        raise TypeError(f"Unsupported entity type: {entity.dxftype()}")
+    return [Vec2(pt[:2]) for pt in entity.get_points()]
+
+
+def densify(points, max_len=MAX_SEG_LEN):
+    """Densify a sequence of ``Vec2`` points by inserting intermediate points."""
+    dense = []
+    for i in range(len(points) - 1):
+        a, b = points[i], points[i + 1]
+        dense.append(a)
+        dist = a.distance(b)
+        if dist > max_len:
+            steps = int(dist // max_len)
+            for k in range(1, steps):
+                t = k / steps
+                dense.append(a + (b - a) * t)
+    dense.append(points[-1])
+    return dense
+
+
+def calc_cum_len(vecs):
+    cum = [0.0]
+    for i in range(len(vecs) - 1):
+        cum.append(cum[-1] + vecs[i].distance(vecs[i + 1]))
+    return cum
+
+
+def calc_mileage(vecs, cum, point, offset):
+    best_len, best_dist = None, float("inf")
+    for i in range(len(vecs) - 1):
+        a, b = vecs[i], vecs[i + 1]
+        ab = b - a
+        if ab.magnitude < TOLERANCE:
+            continue
+        proj = (point - a).dot(ab) / (ab.magnitude ** 2)
+        if proj < 0:
+            proj_pt = a
+        elif proj > 1:
+            proj_pt = b
+        else:
+            proj_pt = a + ab * proj
+        dist = point.distance(proj_pt)
+        if dist < best_dist:
+            best_dist = dist
+            best_len = cum[i] + (proj_pt - a).magnitude
+    return None if best_len is None else best_len + offset
+
+
+def load_rails(path: Path):
+    doc = ezdxf.readfile(path)
+    msp = doc.modelspace()
+    rails = []
+    for layer, offset in RAIL_LAYERS.items():
+        ents = list(msp.query(f'LWPOLYLINE[layer=="{layer}"]')) + \
+               list(msp.query(f'POLYLINE[layer=="{layer}"]'))
+        for ent in ents:
+            pts = densify(poly2d(ent))
+            rails.append((pts, calc_cum_len(pts), offset))
+    return rails
+
+
+def mileage_from_point(pt: Vec2, rails):
+    best = None
+    for vecs, cum, offset in rails:
+        m = calc_mileage(vecs, cum, pt, offset)
+        if m is not None and (best is None or m < best):
+            best = m
+    return best
+
+
 def main():
     dxf_path = Path(DXF_FILE)
     if not dxf_path.exists():
