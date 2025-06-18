@@ -37,11 +37,12 @@ will save a new DXF with annotations added.
 
 
 ### `extract_closed_polyline_text.py`
-Extracts closed polylines and any single line `TEXT` objects located inside
-them from a DXF file (default `room_and_number.dxf`). The script parses the
-mileage value from the contained text and writes a CSV sorted by mileage. Key
-settings at the top of the file allow you to change the input and output file
-names.
+Extracts four-corner polylines from the layer named `拆迁图层` and any single
+line `TEXT` objects located inside them from a DXF file (default
+`room_and_number.dxf`). For every text found, the mileage is computed by
+projecting its insertion point onto the railway centre lines loaded from
+`break.dxf`. The results are written to a CSV sorted by mileage. Key settings at
+the top of the file allow you to change the input and output paths.
 
 Execute `python extract_closed_polyline_text.py` and a CSV named
 `room_and_number_extracted.csv` will be produced if matching features are
