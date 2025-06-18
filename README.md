@@ -35,6 +35,7 @@ start of the file include:
 Execute `python rail_power_draw.py` after configuring the paths and the script
 will save a new DXF with annotations added.
 
+
 ## Installation
 1. Install Python 3.8 or higher.
 2. Install dependencies:
@@ -57,4 +58,4 @@ command line:
 ```bash
 python rail_power.py
 python rail_power_draw.py
-```
+
