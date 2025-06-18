@@ -142,7 +142,8 @@ def parse_angle(angle_str: str) -> float:
     s = angle_str.strip()
 
     # 情况 A：形如 123°45'
-    pattern1 = re.compile(r'^\s*(\d+)\s*°\s*(\d+)\s*\'\s*$')
+    # 正确匹配形如 "12°30'" 的角度格式
+    pattern1 = re.compile(r"^\s*(\d+)\s*°\s*(\d+)\s*'\s*$")
     m1 = pattern1.match(s)
     if m1:
         deg = int(m1.group(1))
