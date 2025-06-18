@@ -143,6 +143,7 @@ def main():
     for poly, shape in zip(polys, poly_polygons):
         # find TEXT entities whose insertion point is inside this polygon
         for txt in texts:
+
             pt = Point(txt.dxf.insert.x, txt.dxf.insert.y)
             if shape.contains(pt):
                 mileage = mileage_from_point(Vec2(pt.x, pt.y), rails)
