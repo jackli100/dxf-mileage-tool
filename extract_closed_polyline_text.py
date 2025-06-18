@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Extract four-corner polylines from a given layer and compute mileage for any
-TEXT inside them.
 
-The script loads a drawing (by default ``room_and_number.dxf``) and searches the
-layer named ``拆迁图层`` for polylines consisting of four corner points. For
-every single-line ``TEXT`` entity found inside such a polyline, its insertion
-point is projected onto the railway centre lines from ``break.dxf`` to determine
-the mileage. The polygon vertices, text content and calculated mileage are
-exported to a CSV sorted by mileage.
 """
 
 import csv
@@ -22,105 +14,6 @@ from ezdxf.math import Vec2
 DXF_FILE = "room_and_number.dxf"  # input DXF path
 OUTPUT_CSV = "room_and_number_extracted.csv"  # output CSV path
 RAIL_DXF = "break.dxf"  # reference DXF containing railway centre lines
-POLYLINE_LAYER = "拆迁图层"  # layer containing target polylines
-
-# Railway layer names and mileage offsets (metres) used in ``rail_power.py``
-RAIL_LAYERS = {
-    'dl1': 56700,
-    'dl2': 74900,
-    'dl3': 100000,
-    'dl4': 125000,
-    'dl5': 156000,
-    'dl6': 163300,
-}
-
-MAX_SEG_LEN = 5.0
-TOLERANCE = 1e-6
-
-# ------------------------------------------------------------------------------
-
-
-def iter_quad_polylines(msp, layer):
-    """Yield polylines on ``layer`` with four distinct vertices."""
-    q = f'LWPOLYLINE[layer=="{layer}"]'
-    for e in msp.query(q):
-        pts = [(vx, vy) for vx, vy, *_ in e.get_points()]
-        if len(pts) > 1 and Vec2(pts[0]).distance(Vec2(pts[-1])) < TOLERANCE:
-            pts = pts[:-1]
-        if len(pts) == 4:
-            yield pts
-    q = f'POLYLINE[layer=="{layer}"]'
-    for e in msp.query(q):
-        pts = [(vx, vy) for vx, vy, *_ in e.get_points()]
-        if len(pts) > 1 and Vec2(pts[0]).distance(Vec2(pts[-1])) < TOLERANCE:
-            pts = pts[:-1]
-        if len(pts) == 4:
-            yield pts
-
-
-def poly2d(entity):
-    """Project a LWPOLYLINE/POLYLINE to a list of ``Vec2`` points."""
-    if entity.dxftype() not in ("LWPOLYLINE", "POLYLINE"):
-        raise TypeError(f"Unsupported entity type: {entity.dxftype()}")
-    return [Vec2(pt[:2]) for pt in entity.get_points()]
-
-
-def densify(points, max_len=MAX_SEG_LEN):
-    """Densify a sequence of ``Vec2`` points by inserting intermediate points."""
-    dense = []
-    for i in range(len(points) - 1):
-        a, b = points[i], points[i + 1]
-        dense.append(a)
-        dist = a.distance(b)
-        if dist > max_len:
-            steps = int(dist // max_len)
-            for k in range(1, steps):
-                t = k / steps
-                dense.append(a + (b - a) * t)
-    dense.append(points[-1])
-    return dense
-
-
-def calc_cum_len(vecs):
-    cum = [0.0]
-    for i in range(len(vecs) - 1):
-        cum.append(cum[-1] + vecs[i].distance(vecs[i + 1]))
-    return cum
-
-
-def calc_mileage(vecs, cum, point, offset):
-    best_len, best_dist = None, float("inf")
-    for i in range(len(vecs) - 1):
-        a, b = vecs[i], vecs[i + 1]
-        ab = b - a
-        if ab.magnitude < TOLERANCE:
-            continue
-        proj = (point - a).dot(ab) / (ab.magnitude ** 2)
-        if proj < 0:
-            proj_pt = a
-        elif proj > 1:
-            proj_pt = b
-        else:
-            proj_pt = a + ab * proj
-        dist = point.distance(proj_pt)
-        if dist < best_dist:
-            best_dist = dist
-            best_len = cum[i] + (proj_pt - a).magnitude
-    return None if best_len is None else best_len + offset
-
-
-def load_rails(path: Path):
-    doc = ezdxf.readfile(path)
-    msp = doc.modelspace()
-    rails = []
-    for layer, offset in RAIL_LAYERS.items():
-        ents = list(msp.query(f'LWPOLYLINE[layer=="{layer}"]')) + \
-               list(msp.query(f'POLYLINE[layer=="{layer}"]'))
-        for ent in ents:
-            pts = densify(poly2d(ent))
-            rails.append((pts, calc_cum_len(pts), offset))
-    return rails
-
 
 def mileage_from_point(pt: Vec2, rails):
     best = None
@@ -147,7 +40,7 @@ def main():
     rails = load_rails(rail_path)
 
     texts = list(msp.query("TEXT"))
-    polys = list(iter_quad_polylines(msp, POLYLINE_LAYER))
+
 
     poly_polygons = [Polygon(pts) for pts in polys]
 
