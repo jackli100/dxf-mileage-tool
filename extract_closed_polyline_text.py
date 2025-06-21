@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Extract closed polylines and inner text from a DXF.
+"""
+Extract closed polylines and inner text from a DXF.
 
 Reads a DXF file (by default ``room_and_number.dxf``) and finds all closed
 polylines that contain a single-line TEXT entity. The mileage value is parsed
@@ -14,10 +15,12 @@ from pathlib import Path
 
 import ezdxf
 from shapely.geometry import Point, Polygon
+from ezdxf.math import Vec2
 
 # ------------ configuration ---------------------------------------------------
 DXF_FILE = "room_and_number.dxf"  # input DXF path
 OUTPUT_CSV = "room_and_number_extracted.csv"  # output CSV path
+RAIL_DXF = "break.dxf"  # reference DXF containing railway centre lines
 
 # ------------------------------------------------------------------------------
 
@@ -44,7 +47,6 @@ def parse_mileage(text: str):
             return None
     return None
 
-
 def iter_closed_polylines(msp):
     """Yield closed LWPOLYLINE or POLYLINE entities as lists of (x, y)."""
     for e in msp.query("LWPOLYLINE"):
@@ -54,6 +56,13 @@ def iter_closed_polylines(msp):
         if e.is_closed:
             yield [(vx, vy) for vx, vy, *_ in e.get_points()]
 
+def mileage_from_point(pt: Vec2, rails):
+    best = None
+    for vecs, cum, offset in rails:
+        m = calc_mileage(vecs, cum, pt, offset)
+        if m is not None and (best is None or m < best):
+            best = m
+    return best
 
 def main():
     dxf_path = Path(DXF_FILE)
@@ -64,6 +73,12 @@ def main():
     doc = ezdxf.readfile(dxf_path)
     msp = doc.modelspace()
 
+    rail_path = Path(RAIL_DXF)
+    if not rail_path.exists():
+        print(f"Reference DXF not found: {rail_path}")
+        return
+    rails = load_rails(rail_path)
+
     texts = list(msp.query("TEXT"))
     polys = list(iter_closed_polylines(msp))
 
@@ -72,21 +87,15 @@ def main():
     rows = []
     for poly, shape in zip(polys, poly_polygons):
         # find TEXT entities whose insertion point is inside this polygon
-        found_text = None
-        mileage = None
         for txt in texts:
-            pt = Point(txt.dxf.insert[:2])
+            pt = Point(txt.dxf.insert.x, txt.dxf.insert.y)
             if shape.contains(pt):
-                found_text = txt.dxf.text
-                mileage = parse_mileage(found_text)
-                break
-        if found_text is None:
-            continue
-        rows.append({
-            "Mileage": mileage,
-            "Text": found_text,
-            "Points": ";".join(f"{x:.3f} {y:.3f}" for x, y in poly)
-        })
+                mileage = mileage_from_point(Vec2(pt.x, pt.y), rails)
+                rows.append({
+                    "Mileage": mileage,
+                    "Text": txt.dxf.text,
+                    "Points": ";".join(f"{x:.3f} {y:.3f}" for x, y in poly),
+                })
 
     # sort rows by mileage if available
     rows.sort(key=lambda r: r["Mileage"] if r["Mileage"] is not None else float("inf"))
