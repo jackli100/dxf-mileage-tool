@@ -151,7 +151,7 @@ def main():
         best = None
         for layer_name, (pts, cum, offset) in rail_data.items():
             length, dist, side = nearest_on_rail(ins, pts, cum)
-            if best is None or dist < best['dist']:
+            if best is None or dist < best['Distance_m']:
                 best = {
                     'Mileage_m': length + offset,
                     'Distance_m': dist,
