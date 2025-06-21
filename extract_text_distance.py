@@ -144,7 +144,10 @@ def main():
 
     rows = []
     for txt in texts:
-        ins = Vec2(txt.dxf.insert[:2])
+        # ``txt.dxf.insert`` is a ``Vec3`` object which does not support
+        # slicing in some ezdxf versions. Explicitly take ``x`` and ``y`` to
+        # create a ``Vec2`` so the script works across library versions.
+        ins = Vec2(txt.dxf.insert.x, txt.dxf.insert.y)
         best = None
         for layer_name, (pts, cum, offset) in rail_data.items():
             length, dist, side = nearest_on_rail(ins, pts, cum)
